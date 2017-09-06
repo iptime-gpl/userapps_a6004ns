@@ -1,0 +1,12 @@
+prefix=/home/bcmac/userapps/nasapp/source/libxslt-1.1.28/install
+exec_prefix=${prefix}
+libdir=${exec_prefix}/lib
+includedir=${prefix}/include
+
+
+Name: libxslt
+Version: 1.1.28
+Description: XSLT library version 2.
+Requires: libxml-2.0
+Libs: -L${libdir} -lxslt -L/home/bcmac/userapps/nasapp/source/libxml2-2.7.7 -L/home/bcmac/userapps/nasapp/lib -lxml2 -lz -liconv -lm -lm 
+Cflags: -I${includedir}

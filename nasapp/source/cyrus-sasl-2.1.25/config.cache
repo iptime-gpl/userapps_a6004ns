@@ -1,0 +1,175 @@
+# This file is a shell script that caches the results of configure
+# tests run on this system so they can be shared between configure
+# scripts and configure runs, see configure's option --config-cache.
+# It is not useful on other systems.  If it contains results you don't
+# want to keep, you may remove or edit it.
+#
+# config.status only pays attention to the cache file if you give it
+# the --recheck option to rerun configure.
+#
+# `ac_cv_env_foo' variables (set or unset) will be overridden when
+# loading this file, other *unset* `ac_cv_foo' will be assigned the
+# following values.
+
+ac_cv___attribute__=${ac_cv___attribute__=yes}
+ac_cv_build=${ac_cv_build=x86_64-unknown-linux-gnu}
+ac_cv_c_compiler_gnu=${ac_cv_c_compiler_gnu=yes}
+ac_cv_c_const=${ac_cv_c_const=yes}
+ac_cv_c_inline=${ac_cv_c_inline=inline}
+ac_cv_can_build_shared=${ac_cv_can_build_shared=yes}
+ac_cv_cmu_lib_subdir=${ac_cv_cmu_lib_subdir=lib64}
+ac_cv_env_CC_set=
+ac_cv_env_CC_value=
+ac_cv_env_CFLAGS_set=
+ac_cv_env_CFLAGS_value=
+ac_cv_env_CPPFLAGS_set=
+ac_cv_env_CPPFLAGS_value=
+ac_cv_env_CPP_set=
+ac_cv_env_CPP_value=
+ac_cv_env_LDFLAGS_set=
+ac_cv_env_LDFLAGS_value=
+ac_cv_env_LIBS_set=
+ac_cv_env_LIBS_value=
+ac_cv_env_build_alias_set=
+ac_cv_env_build_alias_value=
+ac_cv_env_host_alias_set=
+ac_cv_env_host_alias_value=
+ac_cv_env_target_alias_set=
+ac_cv_env_target_alias_value=
+ac_cv_exeext=${ac_cv_exeext=}
+ac_cv_func_connect=${ac_cv_func_connect=yes}
+ac_cv_func_crypt=${ac_cv_func_crypt=no}
+ac_cv_func_dbm_open=${ac_cv_func_dbm_open=no}
+ac_cv_func_dn_expand=${ac_cv_func_dn_expand=no}
+ac_cv_func_dns_lookup=${ac_cv_func_dns_lookup=no}
+ac_cv_func_gai_strerror=${ac_cv_func_gai_strerror=yes}
+ac_cv_func_getaddrinfo=${ac_cv_func_getaddrinfo=yes}
+ac_cv_func_getdomainname=${ac_cv_func_getdomainname=yes}
+ac_cv_func_gethostname=${ac_cv_func_gethostname=yes}
+ac_cv_func_getnameinfo=${ac_cv_func_getnameinfo=yes}
+ac_cv_func_getpassphrase=${ac_cv_func_getpassphrase=no}
+ac_cv_func_getpwnam=${ac_cv_func_getpwnam=yes}
+ac_cv_func_getspnam=${ac_cv_func_getspnam=yes}
+ac_cv_func_getsubopt=${ac_cv_func_getsubopt=yes}
+ac_cv_func_gettimeofday=${ac_cv_func_gettimeofday=yes}
+ac_cv_func_gss_decapsulate_token=${ac_cv_func_gss_decapsulate_token=yes}
+ac_cv_func_gss_encapsulate_token=${ac_cv_func_gss_encapsulate_token=yes}
+ac_cv_func_gss_get_name_attribute=${ac_cv_func_gss_get_name_attribute=yes}
+ac_cv_func_gss_oid_equal=${ac_cv_func_gss_oid_equal=yes}
+ac_cv_func_gsskrb5_register_acceptor_identity=${ac_cv_func_gsskrb5_register_acceptor_identity=no}
+ac_cv_func_inet_aton=${ac_cv_func_inet_aton=yes}
+ac_cv_func_jrand48=${ac_cv_func_jrand48=yes}
+ac_cv_func_memcpy=${ac_cv_func_memcpy=yes}
+ac_cv_func_mkdir=${ac_cv_func_mkdir=yes}
+ac_cv_func_pam_start=${ac_cv_func_pam_start=no}
+ac_cv_func_res_search=${ac_cv_func_res_search=no}
+ac_cv_func_select=${ac_cv_func_select=yes}
+ac_cv_func_snprintf=${ac_cv_func_snprintf=yes}
+ac_cv_func_socket=${ac_cv_func_socket=yes}
+ac_cv_func_strchr=${ac_cv_func_strchr=yes}
+ac_cv_func_strdup=${ac_cv_func_strdup=yes}
+ac_cv_func_strerror=${ac_cv_func_strerror=yes}
+ac_cv_func_strlcat=${ac_cv_func_strlcat=no}
+ac_cv_func_strlcpy=${ac_cv_func_strlcpy=no}
+ac_cv_func_strspn=${ac_cv_func_strspn=yes}
+ac_cv_func_strstr=${ac_cv_func_strstr=yes}
+ac_cv_func_strtol=${ac_cv_func_strtol=yes}
+ac_cv_func_syslog=${ac_cv_func_syslog=yes}
+ac_cv_func_vsnprintf=${ac_cv_func_vsnprintf=yes}
+ac_cv_header_crypt_h=${ac_cv_header_crypt_h=yes}
+ac_cv_header_db_h=${ac_cv_header_db_h=yes}
+ac_cv_header_des_h=${ac_cv_header_des_h=no}
+ac_cv_header_dirent_dirent_h=${ac_cv_header_dirent_dirent_h=yes}
+ac_cv_header_dlfcn_h=${ac_cv_header_dlfcn_h=yes}
+ac_cv_header_fcntl_h=${ac_cv_header_fcntl_h=yes}
+ac_cv_header_gdbm_h=${ac_cv_header_gdbm_h=yes}
+ac_cv_header_gssapi_gssapi_ext_h=${ac_cv_header_gssapi_gssapi_ext_h=yes}
+ac_cv_header_gssapi_h=${ac_cv_header_gssapi_h=yes}
+ac_cv_header_inttypes_h=${ac_cv_header_inttypes_h=yes}
+ac_cv_header_krb5_h=${ac_cv_header_krb5_h=yes}
+ac_cv_header_limits_h=${ac_cv_header_limits_h=yes}
+ac_cv_header_malloc_h=${ac_cv_header_malloc_h=yes}
+ac_cv_header_memory_h=${ac_cv_header_memory_h=yes}
+ac_cv_header_ndbm_h=${ac_cv_header_ndbm_h=yes}
+ac_cv_header_openssl_des_h=${ac_cv_header_openssl_des_h=yes}
+ac_cv_header_openssl_evp_h=${ac_cv_header_openssl_evp_h=yes}
+ac_cv_header_pam_pam_appl_h=${ac_cv_header_pam_pam_appl_h=no}
+ac_cv_header_paths_h=${ac_cv_header_paths_h=yes}
+ac_cv_header_security_pam_appl_h=${ac_cv_header_security_pam_appl_h=no}
+ac_cv_header_stdarg_h=${ac_cv_header_stdarg_h=yes}
+ac_cv_header_stdc=${ac_cv_header_stdc=yes}
+ac_cv_header_stdint_h=${ac_cv_header_stdint_h=yes}
+ac_cv_header_stdlib_h=${ac_cv_header_stdlib_h=yes}
+ac_cv_header_string_h=${ac_cv_header_string_h=yes}
+ac_cv_header_strings_h=${ac_cv_header_strings_h=yes}
+ac_cv_header_sys_file_h=${ac_cv_header_sys_file_h=yes}
+ac_cv_header_sys_param_h=${ac_cv_header_sys_param_h=yes}
+ac_cv_header_sys_stat_h=${ac_cv_header_sys_stat_h=yes}
+ac_cv_header_sys_time_h=${ac_cv_header_sys_time_h=yes}
+ac_cv_header_sys_types_h=${ac_cv_header_sys_types_h=yes}
+ac_cv_header_sys_uio_h=${ac_cv_header_sys_uio_h=yes}
+ac_cv_header_sys_wait_h=${ac_cv_header_sys_wait_h=yes}
+ac_cv_header_sysexits_h=${ac_cv_header_sysexits_h=yes}
+ac_cv_header_syslog_h=${ac_cv_header_syslog_h=yes}
+ac_cv_header_time=${ac_cv_header_time=yes}
+ac_cv_header_unistd_h=${ac_cv_header_unistd_h=yes}
+ac_cv_header_varargs_h=${ac_cv_header_varargs_h=no}
+ac_cv_host=${ac_cv_host=x86_64-unknown-linux-gnu}
+ac_cv_lib_crypt_crypt=${ac_cv_lib_crypt_crypt=yes}
+ac_cv_lib_crypto_DES_cbc_encrypt=${ac_cv_lib_crypto_DES_cbc_encrypt=yes}
+ac_cv_lib_crypto_EVP_DigestInit=${ac_cv_lib_crypto_EVP_DigestInit=yes}
+ac_cv_lib_crypto_des_cbc_encrypt=${ac_cv_lib_crypto_des_cbc_encrypt=no}
+ac_cv_lib_dl_dlopen=${ac_cv_lib_dl_dlopen=yes}
+ac_cv_lib_gdbm_gdbm_open=${ac_cv_lib_gdbm_gdbm_open=no}
+ac_cv_lib_gssapi_gss_unwrap=${ac_cv_lib_gssapi_gss_unwrap=no}
+ac_cv_lib_gssapi_krb5_gss_unwrap=${ac_cv_lib_gssapi_krb5_gss_unwrap=yes}
+ac_cv_lib_inet6_gai_strerror=${ac_cv_lib_inet6_gai_strerror=no}
+ac_cv_lib_inet6_getaddrinfo=${ac_cv_lib_inet6_getaddrinfo=no}
+ac_cv_lib_inet6_getnameinfo=${ac_cv_lib_inet6_getnameinfo=no}
+ac_cv_lib_krb5support_krb5int_getspecific=${ac_cv_lib_krb5support_krb5int_getspecific=yes}
+ac_cv_lib_ndbm_dbm_open=${ac_cv_lib_ndbm_dbm_open=no}
+ac_cv_lib_opie_opiechallenge=${ac_cv_lib_opie_opiechallenge=no}
+ac_cv_lib_pam_pam_start=${ac_cv_lib_pam_pam_start=no}
+ac_cv_lib_resolv_inet_aton=${ac_cv_lib_resolv_inet_aton=yes}
+ac_cv_lib_resolv_res_search=${ac_cv_lib_resolv_res_search=no}
+ac_cv_lib_rsaref_RSAPublicEncrypt=${ac_cv_lib_rsaref_RSAPublicEncrypt=no}
+ac_cv_lib_socket_gai_strerror=${ac_cv_lib_socket_gai_strerror=no}
+ac_cv_lib_socket_getaddrinfo=${ac_cv_lib_socket_getaddrinfo=no}
+ac_cv_lib_socket_getnameinfo=${ac_cv_lib_socket_getnameinfo=no}
+ac_cv_objext=${ac_cv_objext=o}
+ac_cv_path_EGREP=${ac_cv_path_EGREP='/bin/grep -E'}
+ac_cv_path_GREP=${ac_cv_path_GREP=/bin/grep}
+ac_cv_path_LD=${ac_cv_path_LD=/bin/ld}
+ac_cv_path_NM=${ac_cv_path_NM='/bin/nm -B'}
+ac_cv_path_install=${ac_cv_path_install='/bin/install -c'}
+ac_cv_path_mkdir=${ac_cv_path_mkdir=/bin/mkdir}
+ac_cv_prog_AWK=${ac_cv_prog_AWK=gawk}
+ac_cv_prog_CC=${ac_cv_prog_CC=arm-brcm-linux-uclibcgnueabi-gcc}
+ac_cv_prog_CPP=${ac_cv_prog_CPP='gcc -E'}
+ac_cv_prog_NM=${ac_cv_prog_NM='/bin/nm -B'}
+ac_cv_prog_ac_ct_CC=${ac_cv_prog_ac_ct_CC=gcc}
+ac_cv_prog_ac_ct_RANLIB=${ac_cv_prog_ac_ct_RANLIB=ranlib}
+ac_cv_prog_ac_ct_STRIP=${ac_cv_prog_ac_ct_STRIP=strip}
+ac_cv_prog_cc_c89=${ac_cv_prog_cc_c89=}
+ac_cv_prog_cc_g=${ac_cv_prog_cc_g=yes}
+ac_cv_prog_gnu_ld=${ac_cv_prog_gnu_ld=yes}
+ac_cv_prog_make_make_set=${ac_cv_prog_make_make_set=yes}
+ac_cv_search_opendir=${ac_cv_search_opendir='none required'}
+ac_cv_sizeof_long=${ac_cv_sizeof_long=8}
+ac_cv_target=${ac_cv_target=x86_64-unknown-linux-gnu}
+ac_cv_type_mode_t=${ac_cv_type_mode_t=yes}
+ac_cv_type_pid_t=${ac_cv_type_pid_t=yes}
+ac_cv_type_signal=${ac_cv_type_signal=void}
+am_cv_CC_dependencies_compiler_type=${am_cv_CC_dependencies_compiler_type=gcc3}
+andrew_cv_runpath_switch=${andrew_cv_runpath_switch=-Wl,-rpath,}
+ipv6_cv_gai_strerror=${ipv6_cv_gai_strerror=yes}
+ipv6_cv_getaddrinfo=${ipv6_cv_getaddrinfo=yes}
+ipv6_cv_getnameinfo=${ipv6_cv_getnameinfo=yes}
+ipv6_cv_sa_len=${ipv6_cv_sa_len=no}
+ipv6_cv_socklen_t=${ipv6_cv_socklen_t=yes}
+ipv6_cv_ss_family=${ipv6_cv_ss_family=yes}
+sasl_cv_getaddrinfo=${sasl_cv_getaddrinfo=no}
+sasl_cv_getnameinfo=${sasl_cv_getnameinfo=no}
+sasl_cv_getsubopt=${sasl_cv_getsubopt=no}
+sasl_cv_snprintf=${sasl_cv_snprintf=no}
+sasl_cv_uscore=${sasl_cv_uscore=no}

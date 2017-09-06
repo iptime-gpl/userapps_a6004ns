@@ -1,0 +1,5 @@
+apply_regulation_on_ate=0
+txpwr_low_limit_2g=25
+txpwr_low_limit_5gh=25
+txpwr_low_limit_5gm=25
+txpwr_low_limit_5gl=36

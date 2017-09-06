@@ -1,0 +1,1513 @@
+------------------------------------------------------------
+revno: 3953
+committer: Tor Didriksen <tor.didriksen@oracle.com>
+branch nick: release
+timestamp: Tue 2012-08-28 16:13:03 +0200
+message:
+  Bug#14549809 LINKING PROBLEM IN 5.5.28 BUILDS WITH THREADPOOL PLUGIN
+  
+  The use of Thread_iterator did not work on windows (linking problems).
+  Solution: Change the interface between the thread_pool and the server
+  to only use simple free functions.
+  
+  This patch is for 5.5 only (mimicks similar solution in 5.6)
+------------------------------------------------------------
+revno: 3952 [merge]
+tags: clone-5.5.28-build
+committer: Martin Hansson <martin.hansson@oracle.com>
+branch nick: mysql-5.5-push
+timestamp: Fri 2012-08-24 11:56:14 +0200
+message:
+  Bug#14498355: Merge
+    ------------------------------------------------------------
+    revno: 3949.1.1
+    committer: Martin Hansson <martin.hansson@oracle.com>
+    branch nick: mysql-5.5
+    timestamp: Fri 2012-08-24 10:17:08 +0200
+    message:
+      Bug#14498355: DEPRECATION WARNINGS SHOULD NOT CONTAIN MYSQL VERSION
+      NUMBERS
+      
+      If a system variable was declared as deprecated without mention of an
+      alternative, the message would look funny, e.g. for @@delayed_insert_limit:
+      
+      Warning 1287 '@@delayed_insert_limit' is deprecated and
+      will be removed in MySQL .
+      
+      The message was meant to display the version number, but it's not
+      possible to give one when declaring a system variable.
+      
+      The fix does two things:
+      
+      1) The definition of the message
+      ER_WARN_DEPRECATED_SYNTAX_NO_REPLACEMENT is changed so that it does
+      not display a version number. I.e. in English the message now reads:
+      
+      Warning 1287 The syntax '@@delayed_insert_limit' is deprecated and
+      will be removed in a future version.
+      
+      2) The message ER_WARN_DEPRECATED_SYNTAX_WITH_VER is discontinued in
+      favor of ER_WARN_DEPRECATED_SYNTAX for system variables. This change
+      was already done in versions 5.6 and above as part of wl#5265. This
+      part is simply back-ported from the worklog.
+------------------------------------------------------------
+revno: 3951
+committer: Ashish Agarwal<ashish.y.agarwal@oracle.com>
+branch nick: bug14363985
+timestamp: Fri 2012-08-24 14:55:47 +0530
+message:
+  Bug#14363985: MYSQLD CRASHED WHEN DISABL AND
+                ENABLE AUDI PLUGIN WHEN DDL
+                OPERATION HAPPENING
+  
+  PROBLEM: While unloading the plugin, state is
+           not checked before it is to be reaped.
+           This can lead to simultaneous free of
+           plugin memory by more than one thread.
+           Multiple deallocation leads to server
+           crash. In the present bug two threads
+           deallocate the alog_log plugin.
+  
+  SOLUTION: A check is added to ensure that only
+            one thread is unloading the plugin.
+  
+  NOTE: No mtr test is added as it requires
+        multiple threads to access critical
+        section. debug_sync cannot be used in
+        the current senario because we dont
+        have access to thread pointer in
+        some of the plugin functions. IMHO no
+        test case in the current time frame.
+------------------------------------------------------------
+revno: 3950
+committer: Marc Alff <marc.alff@oracle.com>
+branch nick: mysql-5.5-cleanup
+timestamp: Fri 2012-08-24 10:01:59 +0200
+message:
+  Bug#13417440 : 63340: ARCHIVE FILE IO NOT INSTRUMENTED
+  
+  WARNING
+  
+  This patch is for mysql-5.5 only,
+  to be null-merged to mysql-5.6 and mysql-trunk.
+  
+  This is a partial rollback of the file io instrumentation,
+  removing the instrumentation for mysql_file_stat in the archive engine.
+  
+  See the bug comments for details.
+------------------------------------------------------------
+revno: 3949
+committer: Gopal Shankar <gopal.shankar@oracle.com>
+branch nick: sf_mysql-5.5
+timestamp: Fri 2012-08-24 09:51:42 +0530
+message:
+  Bug#14364558 ASSERT `TABLE_LIST->PRELOCKING_PLACEHOLDER==FALSE'
+               FAILED IN CHECK_LOCK_AND_ST
+  
+  Problem:
+  --------
+  lock_tables() is supposed to invoke check_lock_and_start_stmt()
+  for TABLE_LIST which are directly used by top level statement.
+  TABLE_LIST->prelocking_placeholder is set only for TABLE_LIST
+  which are used indirectly by stored programs invoked by top
+  level statement. Hence check_lock_and_start_stmt() should have
+  TABLE_LIST->prelocking_placeholder==false always, but it is
+  observed that this assert fails.
+  
+  The failure is found during RQG test rqg_signal_resignal.
+  
+  Analysis:
+  ---------
+  open_tables() invokes open_and_process_routines() where it
+  finds all the TABLE_LIST that belong to the routine and
+  adds it to thd->lex->query_tables. During this process if
+  the open_and_process_routines() fail for some reason,
+  we are supposed to chop-off all the TABLE_LIST found during
+  calls to open_and_process_routines(). But, in practice this
+  is not happening.
+  
+  thd->lex->query_tables_own_last is supposed to point to a
+  node in thd->lex->query_tables, which would be a first
+  TABLE_LIST used indirectly by stored programs invoked by
+  top level statement. This is found to be not-set correctly
+  when we plan to chop-off TABLE_LIST's, when
+  open_and_process_routines() failed.
+  
+  close_tables_for_reopen() does chop-off all the TABLE_LIST
+  added after thd->lex->query_table_own_last. This is invoked
+  upon error in open_and_process_routines(). This call would
+  not work as expected as thd->lex->query_tables_own_last
+  is not set, or is not set to correctly.
+  
+  Further, when open_tables() restarts the process of finding
+  TABLE_LIST belonging to stored programs, and as the
+  thd->lex->query_tables_own_last points to in-correct node,
+  there is possibility of new iteration setting the
+  thd->lex->query_tables_own_last past some old nodes that
+  belong to stored programs, added earlier and not removed.
+  Later when open_tables() completes, lock_tables() ends up
+  invoking check_lock_and_start_stmt() for TABLE_LIST which
+  belong to stored programs, which is not expected behavior
+  and hence we hit the assert
+  TABLE_LIST->prelocking_placeholder==false.
+  
+  Due to above behavior, if a user application tries to
+  execute a SQL statement which invokes some stored function
+  and if the lock grant on stored function fails due to a
+  deadlock, then mysqld crashes.
+  
+  Fix:
+  ----
+  open_tables() remembers save_query_tables_last which points
+  to thd-lex->query_tables_last before calls to
+  open_and_process_routines(). If there is no known
+  thd->lex->query_tables_own_last set, we are now setting
+  thd->lex->query_tables_own_last to save_query_tables_last.
+  This will make sure that the call to close_tables_for_reopen()
+  will chop-off the list correctly, in other words we now
+  remove all the nodes added to thd->lex->query_tables, by
+  previous calls to open_and_process_routines().
+  
+  Further, it is found that the problem exists starting
+  from 5.5, due to a code refactoring effort related to
+  open_tables(). Hence, the fix will be pushed in 5.5, 5.6
+  and trunk.
+------------------------------------------------------------
+revno: 3948
+committer: Tor Didriksen <tor.didriksen@oracle.com>
+branch nick: 5.5-bug65948
+timestamp: Thu 2012-08-23 16:29:41 +0200
+message:
+  Bug#14463247 ORDER BY SUBQUERY REFERENCING OUTER ALIAS FAILS
+  
+  Documentation for class Item_outer_ref was wrong:
+  (*ref) may point to Item_field as well
+  (see e.g. Item_outer_ref::fix_fields)
+  
+  So this casting in get_store_key() was wrong:
+  (*(Item_ref**)((Item_ref*)keyuse->val)->ref)->ref_type()
+------------------------------------------------------------
+revno: 3947
+committer: Georgi Kodinov <Georgi.Kodinov@Oracle.com>
+branch nick: mysql-5.5-commercial
+timestamp: Fri 2012-08-17 18:02:44 +0300
+message:
+  Bug #14399795 : ISSUES RELATED TO SETTING AUDIT_LOG_STRATEGY 
+  DURING SERVER STARTUP
+  
+  The options parser now correctly checks for ambiguous prefixes in 
+  enumerated variables and emits an error when the value supplied is
+  ambiguous.
+  
+  No test added since mysql-test-run.pl can't handle server startup 
+  failures as an expected state.
+------------------------------------------------------------
+revno: 3946 [merge]
+committer: Marko M?kel? <marko.makela@oracle.com>
+branch nick: mysql-5.5
+timestamp: Tue 2012-08-21 10:59:11 +0300
+message:
+  Merge mysql-5.1 to mysql-5.5.
+    ------------------------------------------------------------
+    revno: 2661.810.76
+    committer: Marko M?kel? <marko.makela@oracle.com>
+    branch nick: mysql-5.1
+    timestamp: Tue 2012-08-21 10:47:17 +0300
+    message:
+      Fix regression from Bug#12845774 OPTIMISTIC INSERT/UPDATE USES WRONG
+      HEURISTICS FOR COMPRESSED PAGE SIZE
+      
+      The fix of Bug#12845774 was supposed to skip known-to-fail
+      btr_cur_optimistic_insert() calls. There was only one such call, in
+      btr_cur_pessimistic_update(). All other callers of
+      btr_cur_pessimistic_insert() would release and reacquire the B-tree
+      page latch before attempting the pessimistic insert. This would allow
+      other threads to restructure the B-tree, allowing (and requiring) the
+      insert to succeed as an optimistic (single-page) operation.
+      
+      Failure to attempt an optimistic insert before a pessimistic one would
+      trigger an attempt to split an empty page.
+      
+      rb:1234 approved by Sunny Bains
+------------------------------------------------------------
+revno: 3945 [merge]
+committer: Mattias Jonsson <mattias.jonsson@oracle.com>
+branch nick: topush-5.5
+timestamp: Mon 2012-08-20 12:44:40 +0200
+message:
+  merge
+    ------------------------------------------------------------
+    revno: 2661.810.75
+    committer: Mattias Jonsson <mattias.jonsson@oracle.com>
+    branch nick: topush-5.1
+    timestamp: Mon 2012-08-20 12:39:36 +0200
+    message:
+      Bug#13025132 - PARTITIONS USE TOO MUCH MEMORY
+      
+      pre-push fix, removed unused variable.
+------------------------------------------------------------
+revno: 3944 [merge]
+committer: Mattias Jonsson <mattias.jonsson@oracle.com>
+branch nick: topush-5.5
+timestamp: Mon 2012-08-20 11:20:00 +0200
+message:
+  merge
+    ------------------------------------------------------------
+    revno: 2661.810.74 [merge]
+    committer: Mattias Jonsson <mattias.jonsson@oracle.com>
+    branch nick: topush-5.1
+    timestamp: Mon 2012-08-20 11:18:17 +0200
+    message:
+      merge
+------------------------------------------------------------
+revno: 3943 [merge]
+committer: Mattias Jonsson <mattias.jonsson@oracle.com>
+branch nick: topush-5.5
+timestamp: Mon 2012-08-20 11:19:02 +0200
+message:
+  merge
+    ------------------------------------------------------------
+    revno: 3940.1.2 [merge]
+    committer: Mattias Jonsson <mattias.jonsson@oracle.com>
+    branch nick: b13025132-55
+    timestamp: Mon 2012-08-20 09:55:54 +0200
+    message:
+      merge
+        ------------------------------------------------------------
+        revno: 2661.826.2
+        committer: Mattias Jonsson <mattias.jonsson@oracle.com>
+        branch nick: b13025132-51
+        timestamp: Fri 2012-08-17 14:25:32 +0200
+        message:
+          Bug#13025132 - PARTITIONS USE TOO MUCH MEMORY
+          
+          Additional patch to remove the part_id -> ref_buffer offset.
+          
+          The partitioning id and the associate record buffer can
+          be found without having to calculate it.
+          
+          By initializing it for each used partition, and then reuse
+          the key-buffer from the queue, it is not needed to have
+          such map.
+    ------------------------------------------------------------
+    revno: 3940.1.1 [merge]
+    committer: Mattias Jonsson <mattias.jonsson@oracle.com>
+    branch nick: b13025132-55
+    timestamp: Wed 2012-08-15 14:56:55 +0200
+    message:
+      manual merge 5.1->5.5
+        ------------------------------------------------------------
+        revno: 2661.826.1
+        committer: Mattias Jonsson <mattias.jonsson@oracle.com>
+        branch nick: b13025132-51
+        timestamp: Wed 2012-08-15 14:31:26 +0200
+        message:
+          Bug#13025132 - PARTITIONS USE TOO MUCH MEMORY
+          
+          The buffer for the current read row from each partition
+          (m_ordered_rec_buffer) used for sorted reads was
+          allocated on open and freed when the ha_partition handler
+          was closed or destroyed.
+          
+          For tables with many partitions and big records this could
+          take up too much valuable memory.
+          
+          Solution is to only allocate the memory when it is needed
+          and free it when nolonger needed. I.e. allocate it in
+          index_init and free it in index_end (and to handle failures
+          also free it on reset, close etc.)
+          
+          Also only allocating needed memory, according to
+          partitioning pruning.
+          
+          Manually tested that it does not use as much memory and
+          releases it after queries.
+------------------------------------------------------------
+revno: 3942 [merge]
+committer: Alexander Barkov <alexander.barkov@oracle.com>
+branch nick: mysql-5.5
+timestamp: Fri 2012-08-17 13:18:56 +0400
+message:
+  Merging from 5.5
+    ------------------------------------------------------------
+    revno: 2661.810.73
+    committer: Alexander Barkov <alexander.barkov@oracle.com>
+    branch nick: mysql-5.1
+    timestamp: Fri 2012-08-17 13:14:04 +0400
+    message:
+      Backporting Bug 14100466 from 5.6.
+------------------------------------------------------------
+revno: 3941 [merge]
+committer: Marko M?kel? <marko.makela@oracle.com>
+branch nick: mysql-5.5
+timestamp: Thu 2012-08-16 18:47:26 +0300
+message:
+  Merge mysql-5.1 to mysql-5.5.
+    ------------------------------------------------------------
+    revno: 2661.810.72
+    committer: Marko M?kel? <marko.makela@oracle.com>
+    branch nick: mysql-5.1
+    timestamp: Thu 2012-08-16 17:45:39 +0300
+    message:
+      Bug#12595091 POSSIBLY INVALID ASSERTION IN BTR_CUR_PESSIMISTIC_UPDATE()
+      
+      Facebook got a case where the page compresses really well so that
+      btr_cur_optimistic_update() returns DB_UNDERFLOW, but when a record
+      gets updated, the compression rate radically changes so that
+      btr_cur_insert_if_possible() can not insert in place despite
+      reorganizing/recompressing the page, leading to the assertion failing.
+      
+      rb:1220 approved by Sunny Bains
+    ------------------------------------------------------------
+    revno: 2661.810.71
+    committer: Marko M?kel? <marko.makela@oracle.com>
+    branch nick: mysql-5.1
+    timestamp: Thu 2012-08-16 17:37:52 +0300
+    message:
+      Bug#12845774 OPTIMISTIC INSERT/UPDATE USES WRONG HEURISTICS FOR
+      COMPRESSED PAGE SIZE
+      
+      This was submitted as MySQL Bug 61456 and a patch provided by
+      Facebook. This patch follows the same idea, but instead of adding a
+      parameter to btr_cur_pessimistic_insert(), we simply remove the
+      btr_cur_optimistic_insert() call there and add it to the only caller
+      that needs it.
+      
+      btr_cur_pessimistic_insert(): Do not try btr_cur_optimistic_insert().
+      
+      btr_insert_on_non_leaf_level_func(): Invoke btr_cur_optimistic_insert()
+      before invoking btr_cur_pessimistic_insert().
+      
+      btr_cur_pessimistic_update(): Clarify in a comment why it is not
+      necessary to invoke btr_cur_optimistic_insert().
+      
+      btr_root_raise_and_insert(): Assert that the root page is not empty.
+      This could happen if a pessimistic insert (involving a split or merge)
+      is performed without first attempting an optimistic (intra-page) insert.
+      
+      rb:1219 approved by Sunny Bains
+    ------------------------------------------------------------
+    revno: 2661.810.70
+    committer: Marko M?kel? <marko.makela@oracle.com>
+    branch nick: mysql-5.1
+    timestamp: Thu 2012-08-16 17:31:23 +0300
+    message:
+      Bug#13523839 ASSERTION FAILURES ON COMPRESSED INNODB TABLES
+      
+      btr_cur_optimistic_insert(): Remove a bogus assertion. The insert may
+      fail after reorganizing the page.
+      
+      btr_cur_optimistic_update(): Do not attempt to reorganize compressed pages,
+      because compression may fail after reorganization.
+      
+      page_copy_rec_list_start(): Use page_rec_get_nth() to restore to the
+      ret_pos, which may also be the page infimum.
+      
+      rb:1221
+------------------------------------------------------------
+revno: 3940
+committer: Venkata Sidagam <venkata.sidagam@oracle.com>
+branch nick: 5.5
+timestamp: Tue 2012-08-14 15:13:30 +0530
+message:
+  Bug #12992993  MYSQLHOTCOPY FAILS IF VIEW EXISTS
+  
+  Problem description:
+  mysqlhotcopy fails if a view presents in the database.
+  
+  Analysis:
+  Before 5.5 'FLUSH TABLES <tbl_name> ... WITH READ LOCK' will able 
+  to get lock for all tables (i.e. base tables and view tables). 
+  In 5.5 onwards 'FLUSH TABLES <tbl_name> ... WITH READ LOCK' for 
+  'view tables' will not work, because taking flush locks on view 
+  tables is not valid.
+  
+  Fix:
+  Take flush lock for 'base tables' and read lock for 'view table' 
+  separately.
+  
+  Note: most of the patch has been backported from bug#13006947's patch
+------------------------------------------------------------
+revno: 3939 [merge]
+committer: Sujatha Sivakumar <sujatha.sivakumar@oracle.com>
+branch nick: Bug13596613_user_var_mysql-5.5
+timestamp: Tue 2012-08-14 14:21:40 +0530
+message:
+  merge from 5.1 to 5.5
+    ------------------------------------------------------------
+    revno: 2661.810.69
+    committer: Sujatha Sivakumar <sujatha.sivakumar@oracle.com>
+    branch nick: Bug13596613_user_var
+    timestamp: Tue 2012-08-14 14:11:01 +0530
+    message:
+      Bug#13596613:SHOW SLAVE STATUS GIVES WRONG OUTPUT WITH
+      MASTER-MASTER AND USING SET USE
+      
+      Problem:
+      =======
+      In a master-master set-up, a master can show a wrong
+      'SHOW SLAVE STATUS' output.
+      
+      Requirements:
+      - master-master
+      - log_slave_updates
+      
+      This is caused when using SET user-variables and then using
+      it to perform writes. From then on the master that performed
+      the insert will have a SHOW SLAVE STATUS that is wrong and  
+      it will never get updated until a write happens on the other
+      master. On"Master A" the "exec_master_log_pos" is not
+      getting updated.
+      
+      Analysis:
+      ========
+      Slave receives a "User_var" event from the master and after
+      applying the event, when "log_slave_updates" option is
+      enabled the slave tries to write this applied event into
+      its own binary log. At the time of writing this event the
+      slave should use the "originating server-id". But in the
+      above case the sever always logs the  "user var events"
+      by using its global server-id. Due to this in a
+      "master-master" replication when the event comes back to the
+      originating server the "User_var_event" doesn't get skipped.
+      "User_var_events" are context based events and they always
+      follow with a query event which marks their end of group.
+      Due to the above mentioned problem with "User_var_event"
+      logging the "User_var_event" never gets skipped where as
+      its corresponding "query_event" gets skipped. Hence the
+      "User_var" event always waits for the next "query event"
+      and the "Exec_master_log_position" does not get updated
+      properly.
+      
+      Fix:
+      ===
+      `MYSQL_BIN_LOG::write' function is used to write events
+      into binary log. Within this function a new object for
+      "User_var_log_event" is created and this new object is used
+      to write the "User_var" event in the binlog. "User var"
+      event is inherited from "Log_event". This "Log_event" has
+      different overloaded constructors. When a "THD" object
+      is present "Log_event(thd,...)" constructor should be used
+      to initialise the objects and in the absence of a valid
+      "THD" object "Log_event()" minimal constructor should be
+      used. In the above mentioned problem always default minimal
+      constructor was used which is incorrect. This minimal
+      constructor is replaced with "Log_event(thd,...)".
+------------------------------------------------------------
+revno: 3938 [merge]
+committer: Mattias Jonsson <mattias.jonsson@oracle.com>
+branch nick: topush-5.5
+timestamp: Mon 2012-08-13 11:21:28 +0200
+message:
+  merge
+    ------------------------------------------------------------
+    revno: 3936.1.1
+    committer: Mattias Jonsson <mattias.jonsson@oracle.com>
+    branch nick: b14342883-55
+    timestamp: Thu 2012-08-09 12:51:37 +0200
+    message:
+      Bug#14342883: SELECT QUERY RETURNS NOT ALL
+      ROWS THAT ARE EXPECTED
+      
+      For non range/list partitioned tables (i.e. HASH/KEY):
+      
+      When prune_partitions finds a multi-range list
+      (or in this test '<>') for a field of the partition index,
+      even if it cannot make any use of the multi-range,
+      it will continue with the next field of the partition index
+      and use that for pruning (even if it the previous
+      field could not be used). This results in partitions is
+      pruned away, leaving partitions that only matches
+      the last field in the partition index, and will exclude
+      partitions which might match any previous fields.
+      
+      Fixed by skipping rest of partitioning key fields/parts
+      if current key field/part could not be used.
+      
+      Also notice it is the order of the fields in the CREATE TABLE
+      statement that triggers this bug, not the order of fields in
+      primary/unique key or PARTITION BY KEY ().
+      It must not be the last field in the partitioning expression that
+      is not equal (or have a non single point range).
+      I.e. the partitioning index is created with the same field order
+      as in the CREATE TABLE. And for the bug to appear
+      the last field must be a single point and some previous field
+      must be a multi-point range.
+------------------------------------------------------------
+revno: 3937 [merge]
+committer: Venkata Sidagam <venkata.sidagam@oracle.com>
+branch nick: 5.5
+timestamp: Sat 2012-08-11 15:52:11 +0530
+message:
+  Bug #13115401: -SSL-KEY VALUE IS NOT VALIDATED AND IT ALLOWS INSECURE 
+  CONNECTIONS IF SPE
+  
+  Merged from mysql-5.1 to mysql-5.5
+    ------------------------------------------------------------
+    revno: 2661.810.68
+    committer: Venkata Sidagam <venkata.sidagam@oracle.com>
+    branch nick: 5.1
+    timestamp: Sat 2012-08-11 15:43:04 +0530
+    message:
+      Bug #13115401: -SSL-KEY VALUE IS NOT VALIDATED AND IT ALLOWS INSECURE 
+                     CONNECTIONS IF SPE
+      
+      Problem description: -ssl-key value is not validated, you can assign any bogus 
+      text to --ssl-key and it is not verified that it exists, and more importantly, 
+      it allows the client to connect to mysqld.
+      
+      Fix: Added proper validations checks for --ssl-key.
+      
+      Note:
+      1) Documentation changes require for 5.1, 5.5, 5.6 and trunk in the sections
+         listed below and the details are :
+      
+       http://dev.mysql.com/doc/refman/5.6/en/ssl-options.html#option_general_ssl
+          and
+       REQUIRE SSL section of
+       http://dev.mysql.com/doc/refman/5.6/en/grant.html
+      
+      2) Client having with option '--ssl', should able to get ssl connection. This 
+      will be implemented as part of separate fix in 5.6 and trunk.
+------------------------------------------------------------
+revno: 3936 [merge]
+committer: Sergey Glukhov <sergey.glukhov@oracle.com>
+branch nick: mysql-5.5
+timestamp: Thu 2012-08-09 15:50:29 +0400
+message:
+  5.1 -> 5.5 merge
+    ------------------------------------------------------------
+    revno: 2661.810.67
+    committer: Sergey Glukhov <sergey.glukhov@oracle.com>
+    branch nick: mysql-5.1
+    timestamp: Thu 2012-08-09 15:34:52 +0400
+    message:
+      Bug #14409015 	MEMORY LEAK WHEN REFERENCING OUTER FIELD IN HAVING
+      When resolving outer fields, Item_field::fix_outer_fields()
+      creates new Item_refs for each execution of a prepared statement, so
+      these must be allocated in the runtime memroot. The memroot switching
+      before resolving JOIN::having causes these to be allocated in the
+      statement root, leaking memory for each PS execution.
+------------------------------------------------------------
+revno: 3935 [merge]
+committer: Marko M?kel? <marko.makela@oracle.com>
+branch nick: mysql-5.5
+timestamp: Thu 2012-08-09 10:58:08 +0300
+message:
+  Merge mysql-5.5 to working copy.
+    ------------------------------------------------------------
+    revno: 3933.1.1
+    committer: Bjorn Munch <bjorn.munch@oracle.com>
+    branch nick: main-55
+    timestamp: Thu 2012-08-09 09:51:34 +0200
+    message:
+      Small cmake syntax fix to fix to -Werror build breakage
+------------------------------------------------------------
+revno: 3934 [merge]
+committer: Marko M?kel? <marko.makela@oracle.com>
+branch nick: mysql-5.5
+timestamp: Thu 2012-08-09 10:50:54 +0300
+message:
+  Null merge from mysql-5.1.
+    ------------------------------------------------------------
+    revno: 2661.810.66 [merge]
+    committer: Marko M?kel? <marko.makela@oracle.com>
+    branch nick: mysql-5.1
+    timestamp: Thu 2012-08-09 10:48:25 +0300
+    message:
+      Merge from mysql-5.1 to working copy.
+        ------------------------------------------------------------
+        revno: 2661.825.1 [merge]
+        committer: Sunanda Menon <sunanda.menon@oracle.com>
+        branch nick: mysql-5.1
+        timestamp: Thu 2012-08-09 08:50:43 +0200
+        message:
+          Merge from mysql-5.1.65-release
+            ------------------------------------------------------------
+            revno: 2661.824.1 [merge]
+            tags: mysql-5.1.65
+            committer: Bjorn Munch <bjorn.munch@oracle.com>
+            branch nick: mysql-5.1.65-release
+            timestamp: Thu 2012-07-12 10:00:14 +0200
+            message:
+              Merge unpushed changes from 5.1.64-release
+                ------------------------------------------------------------
+                revno: 2661.823.4
+                committer: Kent Boortz <kent.boortz@oracle.com>
+                branch nick: mysql-5.1.64-release
+                timestamp: Tue 2012-06-26 16:30:15 +0200
+                message:
+                  Solve a linkage problem with "libmysqld" on several Solaris platforms:
+                  a multiple definition of 'THD::clear_error()' in (at least)
+                  libmysqld.a(lib_sql.o) and libmysqld.a(libfederated_a-ha_federated.o).
+                  
+                  Patch provided by Ramil Kalimullin.
+                ------------------------------------------------------------
+                revno: 2661.823.3
+                committer: Joerg Bruehe <joerg.bruehe@oracle.com>
+                branch nick: mysql-5.1.64-release
+                timestamp: Thu 2012-06-21 16:26:50 +0200
+                message:
+                  Fixing wrong comment syntax (discovered by Kent)
+                ------------------------------------------------------------
+                revno: 2661.823.2
+                committer: Kent Boortz <kent.boortz@oracle.com>
+                branch nick: mysql-5.1.64-release
+                timestamp: Wed 2012-06-20 13:10:13 +0200
+                message:
+                  Version for this release build is 5.1.64
+                ------------------------------------------------------------
+                revno: 2661.823.1 [merge]
+                committer: Kent Boortz <kent.boortz@oracle.com>
+                branch nick: mysql-5.1.64-release
+                timestamp: Wed 2012-06-20 13:06:32 +0200
+                message:
+                  Merge
+------------------------------------------------------------
+revno: 3933 [merge]
+committer: Marko M?kel? <marko.makela@oracle.com>
+branch nick: mysql-5.5
+timestamp: Thu 2012-08-09 10:06:59 +0300
+message:
+  Merge mysql-5.1 to mysql-5.5.
+    ------------------------------------------------------------
+    revno: 2661.810.65
+    committer: Marko M?kel? <marko.makela@oracle.com>
+    branch nick: mysql-5.1
+    timestamp: Thu 2012-08-09 09:55:29 +0300
+    message:
+      Bug#14399148 INNODB TABLES UNDER LOAD PRODUCE DUPLICATE COPIES OF ROWS
+      IN QUERIES
+      
+      This bug was caused by an incorrect fix of
+      Bug#13807811 BTR_PCUR_RESTORE_POSITION() CAN SKIP A RECORD
+      
+      There was nothing wrong with btr_pcur_restore_position(), but with the
+      use of it in the table scan during index creation.
+      
+      rb:1206 approved by Jimmy Yang
+------------------------------------------------------------
+revno: 3932 [merge]
+committer: Rohit Kalhans <rohit.kalhans@oracle.com>
+branch nick: mysql-5.5-11757312
+timestamp: Wed 2012-08-08 22:20:05 +0530
+message:
+  upmerge from mysql-5.1=>mysql-5.5
+    ------------------------------------------------------------
+    revno: 2661.810.64
+    committer: Rohit Kalhans <rohit.kalhans@oracle.com>
+    branch nick: mysql-5.1-11757312
+    timestamp: Wed 2012-08-08 22:15:46 +0530
+    message:
+      BUG#11757312: MYSQLBINLOG DOES NOT ACCEPT INPUT FROM STDIN
+      WHEN STDIN IS A PIPE
+                  
+      Problem: Mysqlbinlog does not accept the input from STDIN when 
+      STDIN is a pipe. This prevents the users from passing the input file
+      through a shell pipe.    
+      
+      Background: The my_seek() function does not check if the file descriptor
+      passed to it is regular (seekable) file. The check_header() function in
+      mysqlbinlog calls the my_b_seek() unconditionally and it fails when
+      the underlying file is a PIPE.  
+                  
+      Resolution: We resolve this problem by checking if the underlying file
+      is a regular file by using my_fstat() before calling my_b_seek(). 
+      If the underlying file is not seekable we skip the call to my_b_seek()
+      in check_header().
+------------------------------------------------------------
+revno: 3931 [merge]
+committer: Nirbhay Choubey <nirbhay.choubey@oracle.com>
+branch nick: 5.5
+timestamp: Tue 2012-08-07 19:07:13 +0530
+message:
+  Merge of patch for Bug#13928675 from mysql-5.1.
+    ------------------------------------------------------------
+    revno: 2661.810.63
+    committer: Nirbhay Choubey <nirbhay.choubey@oracle.com>
+    branch nick: 5.1
+    timestamp: Tue 2012-08-07 18:58:19 +0530
+    message:
+      Bug#13928675 MYSQL CLIENT COPYRIGHT NOTICE MUST
+                   SHOW 2012 INSTEAD OF 2011
+      
+      * Added a new macro to hold the current year :
+        COPYRIGHT_NOTICE_CURRENT_YEAR
+      * Modified ORACLE_WELCOME_COPYRIGHT_NOTICE macro
+        to take the initial year as parameter and pick
+        current year from the above mentioned macro.
+------------------------------------------------------------
+revno: 3930 [merge]
+committer: Harin Vadodaria<harin.vadodaria@oracle.com>
+branch nick: 55-bug14068244
+timestamp: Tue 2012-08-07 16:27:40 +0530
+message:
+  Bug#14068244: INCOMPATIBILITY BETWEEN LIBMYSQLCLIENT/LIBMYSQLCLIENT_R
+                AND LIBCRYPTO
+  
+  Description: Merge from 5.1 to 5.5
+    ------------------------------------------------------------
+    revno: 2661.810.62
+    committer: Harin Vadodaria<harin.vadodaria@oracle.com>
+    branch nick: 51-bug14068244
+    timestamp: Tue 2012-08-07 16:23:53 +0530
+    message:
+      Bug#14068244: INCOMPATIBILITY BETWEEN LIBMYSQLCLIENT/LIBMYSQLCLIENT_R
+                    AND LIBCRYPTO
+      
+      Problem: libmysqlclient_r exports symbols from yaSSL library which
+               conflict with openSSL symbols. This issue is related to symbols
+               used by CURL library and are defined in taocrypt. Taocrypt has
+               dummy implementation of these functions. Due to this when a
+               program which uses libcurl library functions is compiled using
+               libmysqlclient_r and libcurl, it hits segmentation fault in
+               execution phase.
+      
+      Solution: MySQL should not be exporting such symbols. However, these
+                functions are not used by MySQL code at all. So avoid compiling
+                them in the first place.
+------------------------------------------------------------
+revno: 3929
+committer: Praveenkumar Hulakund <praveenkumar.hulakund@oracle.com>
+branch nick: mysql-5.5
+timestamp: Tue 2012-08-07 11:48:36 +0530
+message:
+  Bug#13058122 - DML, LOCK/UNLOCK TABLES AND SELECT LEAD TO 
+  FOREVER MDL LOCK
+  
+  Analysis:
+  ----------
+  While granting MDL lock for the lock requests in wait queue,
+  first the lock is granted to the high priority lock types
+  and then to the low priority lock types.
+  
+  MDL Priority Matrix,
+    +-------------+----+---+---+---+----+-----+
+    | Locks       |    |   |   |   |    |     |
+    | has Priority|    |   |   |   |    |     |
+    | over --->   |  S | SR| SW| SU| SNW| SNRW|   
+    +-------------+----+---+---+---+----+-----+
+    | X           |  + | + | + | + | +  | +   |
+    +-------------|----|---|---|---|----|-----|
+    | SNRW        |  - | + | + | - | -  | -   |
+    +-------------|----|---|---|---|----|-----|
+    | SNW         |  - | - | + | - | -  | -   |
+    +-------------+----+---+---+---+----+-----+
+  
+  Here '+' means, Lock priority is higher.
+       '-' means, Has same priority
+  
+  In the scenario where,
+     *. Lock wait queue has requests of type S/SR/SW/SU.
+     *. And locks of high priority X/SNRW/SNW are requested 
+        continuously.
+  
+  In this case, while granting lock, always first high priority 
+  lock requests(X/SNRW/SNW) are considered. Low priority 
+  locks(S/SR/SW/SU) will not get chance and they will 
+  wait forever.
+  
+  In the scenario for which this bug is reported, application
+  executed many LOCK TABLES ... WRITE statements concurrently.
+  These statements request SNRW lock. Also there were some
+  connections trying to execute DML statements requesting SR
+  lock. Since SNRW lock request has higher priority (and as
+  they were too many waiting SNRW requests) lock is always 
+  granted to it. So, lock request SR will wait forever, resulting
+  in DML starvation.
+  
+  How is this handled in 5.1?
+  ---------------------------
+  Even in 5.1 we have low priority lock starvation issue.
+  But, in 5.1 thread locking, system variable 
+  "max_write_lock_count" can be configured to grant
+  some pending read lock requests. After 
+  "max_write_lock_count" of write lock grants all the low
+  priority locks are granted.
+  
+  Why this issue is seen in 5.5/trunk?
+  ---------------------------------
+  In 5.5/trunk MDL locking, "max_write_lock_count" system 
+  variable exists but not used in MDL, only thread lock uses
+  it. So no effect of "max_write_lock_count" in MDL locking.
+  This means that starvation of metadata locks is possible 
+  even if max_write_lock_count is used.
+  
+  Looks like, customer was using "max_write_lock_count" in
+  5.1 and when upgraded to 5.5, starvation is seen because
+  of not having effect of "max_write_lock_count" in MDL.
+  
+  Fix:
+  ----------
+  As a fix, support for max_write_lock_count is added to MDL.
+  To maintain write lock counter per MDL_lock object, new
+  member "m_hog_lock_count" is added in MDL_lock.
+  
+  And following logic is added to increment the counter in 
+  function reschedule_waiters, 
+  (reschedule_waiters function is called while thread is
+   releasing the lock)
+      - After granting lock request from the wait queue.
+      -  Check if there are any S/SR/SU/SW exists in the wait queue
+        - If yes then increment the "m_hog_lock_count"
+  
+  And following logic is added in the same function to
+  handle pending S/SU/SR/SW locks
+      
+      - Before granting locks 
+      - Check if max_write_lock_count <= m_hog_lock_count
+      - If Yes, then try to grant S/SR/SW/SU locks. 
+        (Since all of these has same priority, all locks are
+         granted together. But some lock grant may fail because
+         of grant incompatibility)
+      - Reset m_hog_lock_count if there no low priority lock
+        requests in wait queue. 
+      - return
+  
+  Note:
+  --------------------------
+  In the lock priority matrix explained above,
+  though X has priority over the SNW and SNRW. X locks is
+  taken mostly for RENAME, TRUNCATE, CREATE ... operations.
+  So lock type X may not be requested in loop continuously 
+  in real world applications, as compared to other lock 
+  request types. So, lock request of type SNW and SNRW are 
+  not starved. So, we can grant all S/SR/SU/SW in one shot,
+  without considering SNW & SNRW lock request starvation.
+  
+  ALTER table operations take SU lock first and then 
+  upgrade to SNW if required. All S, SR, SW, SU have same
+  lock priority. So while granting SU, request of types
+  SR, SW, S are also granted in one shot. So, lock request 
+  of type SU->SNW in loop will not make other low priority 
+  lock request to starve.
+  
+  But, when there is request for lock of type SNRW, lock
+  requests of lower priority types are not granted. And if 
+  SNRW is requested in loop continuously then all 
+  S, SR, SW, SU are starved.
+  
+  This patch addresses the latter scenario.
+  When we have S/SR/SW/SU in wait queue and if 
+  there are
+      - Continuous SNRW lock requests
+      - OR one or more X and Continuous SNRW lock requests.
+      - OR one SNW and Continuous SNRW lock requests.
+      - OR one SNW, one or more X and continuous SNRW lock 
+        requests.
+  in wait queue then, S/SR/SW/SU lock request are starved.
+------------------------------------------------------------
+revno: 3928 [merge]
+committer: Chaithra Gopalareddy <chaithra.gopalareddy@oracle.com>
+branch nick: mysql-5.5
+timestamp: Mon 2012-08-06 10:40:03 +0530
+message:
+  Merge from 5.1 to 5.5
+    ------------------------------------------------------------
+    revno: 2661.810.61
+    committer: Chaithra Gopalareddy <chaithra.gopalareddy@oracle.com>
+    branch nick: mysql-5.1
+    timestamp: Sun 2012-08-05 16:29:28 +0530
+    message:
+      Bug #14099846: EXPORT_SET CRASHES DUE TO OVERALLOCATION OF MEMORY
+      
+      Backport the fix from 5.6 to 5.1
+      Base bug number : 11765562
+------------------------------------------------------------
+revno: 3927
+author: hery.ramilison@oracle.com
+committer: Hery Ramilison <hery.ramilison@oracle.com>
+branch nick: mysql-5.5
+timestamp: Thu 2012-08-02 21:09:42 +0200
+message:
+  Merge from mysql-5.5.27-release
+------------------------------------------------------------
+revno: 3926 [merge]
+committer: Joerg Bruehe <joerg.bruehe@oracle.com>
+branch nick: mysql-5.5
+timestamp: Tue 2012-07-31 20:45:36 +0200
+message:
+  INSTALL-BINARY placeholder (upmerge from 5.1): change invalid URLs (request from Kristofer)
+    ------------------------------------------------------------
+    revno: 2661.810.60
+    committer: Joerg Bruehe <joerg.bruehe@oracle.com>
+    branch nick: mysql-5.1
+    timestamp: Tue 2012-07-31 20:41:46 +0200
+    message:
+      INSTALL-BINARY placeholder: change invalid URLs (request from Kristofer)
+------------------------------------------------------------
+revno: 3925 [merge]
+committer: Tor Didriksen <tor.didriksen@oracle.com>
+branch nick: 5.5-merge
+timestamp: Fri 2012-07-27 09:19:35 +0200
+message:
+  merge 5.1 => 5.5
+    ------------------------------------------------------------
+    revno: 2661.810.59
+    committer: Tor Didriksen <tor.didriksen@oracle.com>
+    branch nick: 5.1
+    timestamp: Fri 2012-07-27 09:13:10 +0200
+    message:
+      Bug#14111180 HANDLE_FATAL_SIGNAL IN PTR_COMPARE_1 / QUEUE_INSERT
+      
+      Space available for merging was calculated incorrectly.
+------------------------------------------------------------
+revno: 3924 [merge]
+committer: Venkata Sidagam <venkata.sidagam@oracle.com>
+branch nick: mysql-5.5-59107-new
+timestamp: Fri 2012-07-27 12:12:15 +0530
+message:
+  Bug #12876932 - INCORRECT SELECT RESULT ON FEDERATED TABLE
+  
+  Null merge from 5.1 to 5.5
+    ------------------------------------------------------------
+    revno: 2661.810.58
+    committer: Venkata Sidagam <venkata.sidagam@oracle.com>
+    branch nick: mysql-5.1-59107
+    timestamp: Fri 2012-07-27 12:05:37 +0530
+    message:
+      Bug #12876932 - INCORRECT SELECT RESULT ON FEDERATED TABLE
+      
+      Fixed the missing of federated/include folder at the time 
+      of preparing package distribution, issue happens only in 5.1
+------------------------------------------------------------
+revno: 3923 [merge]
+committer: Praveenkumar Hulakund <praveenkumar.hulakund@oracle.com>
+branch nick: mysql_5_5
+timestamp: Thu 2012-07-26 23:53:45 +0530
+message:
+  Merge from 5.1 to 5.5
+    ------------------------------------------------------------
+    revno: 2661.810.57
+    committer: Praveenkumar Hulakund <praveenkumar.hulakund@oracle.com>
+    branch nick: mysql_5_1
+    timestamp: Thu 2012-07-26 23:44:43 +0530
+    message:
+      BUG#13868860 - LIMIT '5' IS EXECUTED WITHOUT ERROR WHEN '5' 
+                     IS PLACE HOLDER AND USE SERVER-SIDE 
+      
+      Analysis:
+      LIMIT always takes nonnegative integer constant values. 
+      
+      http://dev.mysql.com/doc/refman/5.6/en/select.html
+      
+      So parsing of value '5' for LIMIT in SELECT fails.
+      
+      But, within prepared statement, LIMIT parameters can be
+      specified using '?' markers. Value for the parameter can
+      be supplied while executing the prepared statement.
+      
+      Passing string values, float or double value for LIMIT
+      works well from CLI. Because, while setting the value
+      for the parameters from the variable list (added using
+      SET), if the value is for parameter LIMIT then its 
+      converted to integer value. 
+      
+      But, when prepared statement is executed from the other
+      interfaces as J connectors, or C applications etc.
+      The value for the parameters are sent to the server
+      with execute command. Each item in log has value and
+      the data TYPE. So, While setting parameter value
+      from this log, value is set to all the parameters
+      with the same data type as passed.
+      But here logic to convert value to integer type
+      if its for LIMIT parameter is missing.
+      Because of this,string '5' is set to LIMIT.
+      And the same is logged into the binlog file too. 
+      
+      Fix:
+      When executing prepared statement having parameter for
+      CLI it worked fine, as the value set for the parameter
+      is converted to integer. And this failed in other 
+      interfaces as J connector,C Applications etc as this 
+      conversion is missing.
+      
+      So, as a fix added check while setting value for the
+      parameters. If the parameter is for LIMIT value then
+      its converted to integer value.
+------------------------------------------------------------
+revno: 3922 [merge]
+committer: Venkata Sidagam <venkata.sidagam@oracle.com>
+branch nick: mysql-5.5-59107-new
+timestamp: Thu 2012-07-26 23:27:01 +0530
+message:
+  Bug #12876932 - INCORRECT SELECT RESULT ON FEDERATED TABLE
+                    
+  Merged pb2 test failure fix from mysql-5.1 to mysql-5.5
+    ------------------------------------------------------------
+    revno: 2661.810.56
+    committer: Venkata Sidagam <venkata.sidagam@oracle.com>
+    branch nick: mysql-5.1-59107
+    timestamp: Thu 2012-07-26 23:23:04 +0530
+    message:
+      Bug #12876932 - INCORRECT SELECT RESULT ON FEDERATED TABLE
+      
+      Fix for pb2 test failure.
+------------------------------------------------------------
+revno: 3921 [merge]
+committer: Nirbhay Choubey <nirbhay.choubey@oracle.com>
+branch nick: 5.5
+timestamp: Thu 2012-07-26 21:59:05 +0530
+message:
+  Merge of patch for Bug#13741677 from mysql-5.1.
+    ------------------------------------------------------------
+    revno: 2661.810.55
+    committer: Nirbhay Choubey <nirbhay.choubey@oracle.com>
+    branch nick: B13741677-5.1
+    timestamp: Thu 2012-07-26 21:47:03 +0530
+    message:
+      Bug#13741677 MYSQL_SECURE_INSTALLATION DOES NOT
+                   WORK + SAVES ROOT PASSWORD TO DISK!
+      
+      The secure installation scripts connect to the
+      server by storing the password in a temporary
+      option file. Now, if the script gets killed or
+      fails for some reason, the removal of the option
+      file may not take place.
+      
+      This patch introduces following enhancements :
+      * (.sh) Made sure that cleanup happens at every
+        call to 'exit 1'. This is performed implicitly
+        by END{} in pl.in.
+      * (.pl.in) Added a warning in case unlink fails
+        to delete the option/query files.
+      * (.sh/.pl.in) Added more signals to the signal
+        handler list. SIG# 1, 3, 6, 15
+------------------------------------------------------------
+revno: 3920 [merge]
+committer: Tor Didriksen <tor.didriksen@oracle.com>
+branch nick: 5.5-merge
+timestamp: Thu 2012-07-26 15:06:43 +0200
+message:
+  merge 5.1 => 5.5
+    ------------------------------------------------------------
+    revno: 2661.810.54
+    committer: Tor Didriksen <tor.didriksen@oracle.com>
+    branch nick: 5.1
+    timestamp: Thu 2012-07-26 15:05:24 +0200
+    message:
+      Backport of Bug#14171740 65562: STRING::SHRINK SHOULD BE A NO-OP WHEN ALLOCED=0
+------------------------------------------------------------
+revno: 3919 [merge]
+committer: Venkata Sidagam <venkata.sidagam@oracle.com>
+branch nick: mysql-5.5-59107-new
+timestamp: Thu 2012-07-26 15:29:19 +0530
+message:
+  Bug #12876932 - INCORRECT SELECT RESULT ON FEDERATED TABLE
+        
+  Merged from mysql-5.1 to mysql-5.5
+    ------------------------------------------------------------
+    revno: 2661.810.53
+    committer: Venkata Sidagam <venkata.sidagam@oracle.com>
+    branch nick: mysql-5.1-59107
+    timestamp: Thu 2012-07-26 15:09:22 +0530
+    message:
+      Bug #12876932 - INCORRECT SELECT RESULT ON FEDERATED TABLE
+      
+      Problem description:
+      Table 't' created with two colums having compound index on both the 
+      columns under innodb/myisam engine at remote machine. In the local 
+      machine same table is created undet the federated engine.
+      A select having where clause with along 'AND' operation gives wrong 
+      results on local machine.
+      
+      Analysis: 
+      The given query at federated engine is wrongly transformed by 
+      federated::create_where_from_key() function and the same was sent to 
+      the remote machine. Hence the local machine is showing wrong results.
+      
+      Given query "select c1 from t where c1 <= 2 and c2 = 1;"
+      Query transformed, after ha_federated::create_where_from_key() function is:
+      SELECT `c1`, `c2` FROM `t` WHERE  (`c1` IS NOT NULL ) AND 
+      ( (`c1` >= 2)  AND  (`c2` <= 1) ) and the same sent to real_query().
+      In the above the '<=' and '=' conditions were transformed to '>=' and 
+      '<=' respectively.
+      
+      ha_federated::create_where_from_key() function behaving as below:
+      The key_range is having both the start_key and end_key. The start_key 
+      is used to get "(`c1` IS NOT NULL )" part of the where clause, this 
+      transformation is correct. The end_key is used to get "( (`c1` >= 2) 
+      AND  (`c2` <= 1) )", which is wrong, here the given conditions('<=' and '=') 
+      are changed as wrong conditions('>=' and '<=').
+      The end_key is having {key = 0x39fa6d0 "", length = 10, keypart_map = 3, 
+      flag = HA_READ_AFTER_KEY}
+      
+      The store_length is having value '5'. Based on store_length and length 
+      values the condition values is applied in HA_READ_AFTER_KEY switch case.
+      The switch case 'HA_READ_AFTER_KEY' is applicable to only the last part of 
+      the end_key and for previous parts it is going to 'HA_READ_KEY_OR_NEXT' case, 
+      here the '>=' is getting added as a condition instead of '<='.
+      
+      Fix:
+      Updated the 'if' condition in 'HA_READ_AFTER_KEY' case to affect for all 
+      parts of the end_key. i.e 'i > 0' will used for end_key, Hence added it in 
+      the if condition.
+------------------------------------------------------------
+revno: 3918
+committer: Thayumanavar <thayumanavar.x.sachithanantha@oracle.com>
+branch nick: mysql-5.5
+timestamp: Wed 2012-07-25 16:24:18 +0530
+message:
+  Bug#13699303 - THREAD POOL PLUGIN IGNORES TIMEOUT.
+  PROBLEM: 
+  mysql provides a feature where in a session which is 
+  idle for a period specified by the wait_timeout variable
+  (whose value is in seconds), the session is closed
+  This feature is not present when we use thread pool.
+  FIX:
+  This patch implements the interface functions which is 
+  required to implement the wait_timeout functionality
+  in the thread pool plugin.
+------------------------------------------------------------
+revno: 3917
+committer: Sujatha Sivakumar <sujatha.sivakumar@oracle.com>
+branch nick: Bug13961678
+timestamp: Wed 2012-07-25 14:56:37 +0530
+message:
+  Follow up patch for BUG#13961678. Fixing compilation warning given below.
+  "warning: integer constant is too large for 'long' type"
+------------------------------------------------------------
+revno: 3916 [merge]
+committer: Annamalai Gurusami <annamalai.gurusami@oracle.com>
+branch nick: mysql-5.5
+timestamp: Wed 2012-07-25 13:53:01 +0530
+message:
+  Null merge from mysql-5.1 to mysql-5.5. 
+    ------------------------------------------------------------
+    revno: 2661.810.52
+    committer: Annamalai Gurusami <annamalai.gurusami@oracle.com>
+    branch nick: mysql-5.1
+    timestamp: Wed 2012-07-25 13:51:39 +0530
+    message:
+      Bug #13113026 INFORMATION_SCHEMA.INNODB_BUFFER_PAGE_LRUFROM 5.6 BACKPORT
+      
+      Backporting the WL#5716, "Information schema table for InnoDB 
+      buffer pool information". Backporting revisions 2876.244.113, 
+      2876.244.102 from mysql-trunk.
+      
+      rb://1175 approved by Jimmy Yang. 
+------------------------------------------------------------
+revno: 3915
+committer: Annamalai Gurusami <annamalai.gurusami@oracle.com>
+branch nick: mysql-5.5
+timestamp: Wed 2012-07-25 10:48:16 +0530
+message:
+  Bug #13113026 INFORMATION_SCHEMA.INNODB_BUFFER_PAGE_LRUFROM 5.6 BACKPORT
+  
+  Backporting the WL#5716, "Information schema table for InnoDB
+  buffer pool information". Backporting revisions 2876.244.113,
+  2876.244.102 from mysql-trunk.
+  
+  rb://1177 approved by Jimmy Yang. 
+------------------------------------------------------------
+revno: 3914
+committer: Harin Vadodaria<harin.vadodaria@oracle.com>
+branch nick: 55_new
+timestamp: Tue 2012-07-24 18:45:58 +0530
+message:
+  Bug#13904906: YASSL PRE-AUTH CRASH WITH 5.1.62, 5.5.22
+  
+  Problem: Valgrind reports errors when an invalid certificate is used on the
+           client.
+  
+  Solution: Updated yaSSL to version 2.2.2.
+------------------------------------------------------------
+revno: 3913
+committer: Sujatha Sivakumar <sujatha.sivakumar@oracle.com>
+branch nick: Bug13961678
+timestamp: Tue 2012-07-24 16:26:16 +0530
+message:
+  Bug#13961678:MULTI-STATEMENT TRANSACTION REQUIRED MORE THAN
+  'MAX_BINLOG_CACHE_SIZE' ERROR
+        
+  Problem:
+  =======
+  MySQL returns following error in win64.
+  "ERROR 1197 (HY000): Multi-statement transaction required more than
+  'max_binlog_cache_size' bytes of storage; increase this mysqld variable
+  and try again" when user tries to load >4G file even if
+  max_binlog_cache_size set to maximum value. On Linux everything
+  works fine.
+        
+  Analysis:
+  ========
+  The `max_binlog_cache_size' variable is of type `ulonglong'.  This
+  value is set to `ULONGLONG_MAX' at the time of server start up. The
+  above value is stored in an intermediate variable named
+  `saved_max_binlog_cache_size' which is of type `ulong'. In visual
+  c++ complier the `ulong' type is of 4bytes in size and hence the value
+  is getting truncated to '4GB' and the cache is not able to grow beyond
+  4GB size. The same limitation is observed with 
+  "max_binlog_stmt_cache_size" as well. Similar fix has been applied.
+        
+  Fix:
+  ===
+  As part of fix the type "ulong" is replaced with "my_off_t" which is of
+  type "ulonglong". 
+------------------------------------------------------------
+revno: 3912
+committer: Joerg Bruehe <joerg.bruehe@oracle.com>
+branch nick: bug14318456-5.5
+timestamp: Tue 2012-07-24 12:32:14 +0200
+message:
+  Fix bug#14318456  SPEC FILE DOES NOT RUN THE TEST SUITE DURING RPM BUILD
+  
+  Add a macro "runselftest" to the spec file for RPM builds.
+  
+  If its value is 1 (the default), the test suite will be run during
+  the RPM build.
+  To prevent that, add this to the rpmbuild command line:
+      --define "runselftest 0"
+  Failures of the test suite will NOT make the RPM build fail!
+------------------------------------------------------------
+revno: 3911 [merge]
+committer: Alexander Barkov <alexander.barkov@oracle.com>
+branch nick: mysql-5.5
+timestamp: Tue 2012-07-24 09:29:16 +0400
+message:
+  Merging from 5.1
+    ------------------------------------------------------------
+    revno: 2661.810.51
+    committer: Alexander Barkov <alexander.barkov@oracle.com>
+    branch nick: mysql-5.1
+    timestamp: Tue 2012-07-24 09:27:00 +0400
+    message:
+      Fixing wrong copyright. Index.xml was modified in 2005,
+      while the copyright notice still mentioned 2003.
+------------------------------------------------------------
+revno: 3910 [merge]
+committer: Ashish Agarwal<ashish.y.agarwal@oracle.com>
+branch nick: mysql-5.5
+timestamp: Mon 2012-07-23 14:05:13 +0530
+message:
+  BUG#13555854: CHECK AND REPAIR TABLE SHOULD BE MORE ROBUST [1]
+  
+  ISSUE: Incorrect key file. Key file is corrupted,
+         Reading incorrect key information (keyseg)
+         from index file. Key definition in .MYI
+         and .FRM file differs. Starting pointer
+         to read the keyseg information is changed
+         to a value greater than the pack_reclength.
+         Memcpy tries to read keyseg information from
+         unallocated memory which causes the crash.
+  
+  SOLUTION: One more check added to compare the
+            the key definition in .MYI and .FRM
+            file. If the definition differ, server
+            produces an error.
+    ------------------------------------------------------------
+    revno: 3872.1.1
+    committer: Ashish Agarwal<ashish.y.agarwal@oracle.com>
+    branch nick: mysql-5.5
+    timestamp: Mon 2012-07-02 15:20:23 +0530
+    message:
+      BUG#13555854: CHECK AND REPAIR TABLE SHOULD BE MORE ROBUST [1]
+      
+      ISSUE: Incorrect key file. Key file is corrupted,
+             Reading incorrect key information (keyseg)
+             from index file. Key definition in .MYI
+             and .FRM file differs. Starting pointer
+             to read the keyseg information is changed
+             to a value greater than the pack_reclength.
+             Memcpy tries to read keyseg information from
+             unallocated memory which causes the crash.
+      
+      SOLUTION: One more check added to compare the
+                the key definition in .MYI and .FRM
+                file. If the definition differ, server
+                produces an error.
+------------------------------------------------------------
+revno: 3909
+committer: Bjorn Munch <bjorn.munch@oracle.com>
+branch nick: imct-55
+timestamp: Thu 2012-07-19 17:50:49 +0200
+message:
+  Fix -Werror build breakage
+------------------------------------------------------------
+revno: 3908 [merge]
+committer: Bjorn Munch <bjorn.munch@oracle.com>
+branch nick: imct-55
+timestamp: Thu 2012-07-19 15:58:07 +0200
+message:
+  null upmerge
+    ------------------------------------------------------------
+    revno: 2661.810.50
+    committer: Bjorn Munch <bjorn.munch@oracle.com>
+    branch nick: imct-51
+    timestamp: Thu 2012-07-19 15:55:41 +0200
+    message:
+      Reverting broken configure/make stuff
+------------------------------------------------------------
+revno: 3907
+committer: Bjorn Munch <bjorn.munch@oracle.com>
+branch nick: imct-55
+timestamp: Thu 2012-07-19 13:37:38 +0200
+message:
+  Fix cmake file broken by merge from 5.1
+------------------------------------------------------------
+revno: 3906 [merge]
+committer: Bjorn Munch <bjorn.munch@oracle.com>
+branch nick: imct-55
+timestamp: Thu 2012-07-19 13:01:33 +0200
+message:
+  upmerge 14035452 5.1 -> 5.5
+    ------------------------------------------------------------
+    revno: 2661.810.49
+    committer: Bjorn Munch <bjorn.munch@oracle.com>
+    branch nick: imct-51
+    timestamp: Thu 2012-07-19 12:57:36 +0200
+    message:
+      Bug #14035452 - MODULARIZE MYSQL_CLIENT_TEST
+        Added new minimal client using same framework
+        Added internal test using it
+        Small changes to top level make/configure/cmake to have it built
+------------------------------------------------------------
+revno: 3905 [merge]
+committer: Venkata Sidagam <venkata.sidagam@oracle.com>
+branch nick: mysql-5.5-13955256
+timestamp: Thu 2012-07-19 14:14:03 +0530
+message:
+  Bug #12615411 - server side help doesn't work as first statement
+  
+  Merged from mysql-5.1 to mysql-5.5
+    ------------------------------------------------------------
+    revno: 2661.810.48
+    committer: Venkata Sidagam <venkata.sidagam@oracle.com>
+    branch nick: mysql-5.1-13955256
+    timestamp: Thu 2012-07-19 13:52:34 +0530
+    message:
+      Bug #12615411 - server side help doesn't work as first statement
+      
+      Problem description:
+      Giving "help 'contents'" in the mysql client as a first statement
+      gives error
+      
+      Analysis:
+      In com_server_help() function the "server_cmd" variable was
+      initialised with buffer->ptr(). And the "server_cmd" variable is not
+      updated since we are passing "'contents'"(with single quote) so the
+      buffer->ptr() consists of the previous buffer values and it was sent
+      to the mysql_real_query() hence we are getting error.
+      
+      Fix:
+      We are not initialising the "server_cmd" variable and we are updating
+      the variable with "server_cmd= cmd_buf" in any of the case i.e with
+      single quote or without single quote for the contents.
+      As part of error message improvement, added new error message in case
+      of "help 'contents'".
+------------------------------------------------------------
+revno: 3904 [merge]
+committer: Chaithra Gopalareddy <chaithra.gopalareddy@oracle.com>
+branch nick: mysql-5.5
+timestamp: Wed 2012-07-18 15:18:15 +0530
+message:
+  Merge from 5.1 to 5.5
+    ------------------------------------------------------------
+    revno: 2661.810.47
+    committer: Chaithra Gopalareddy <chaithra.gopalareddy@oracle.com>
+    branch nick: mysql-5.1
+    timestamp: Wed 2012-07-18 14:36:08 +0530
+    message:
+      Bug#11762052: 54599: BUG IN QUERY PLANNER ON QUERIES WITH
+                           "ORDER BY" AND "LIMIT BY" CLAUSE
+      
+      PROBLEM:
+      When a 'limit' clause is specified in a query along with
+      group by and order by, optimizer chooses wrong index
+      there by examining more number of rows than required.
+      However without the 'limit' clause, optimizer chooses
+      the right index.
+      
+      ANALYSIS:
+      With respect to the query specified, range optimizer chooses
+      the first index as there is a range present ( on 'a'). Optimizer
+      then checks for an index which would give records in sorted
+      order for the 'group by' clause.
+      
+      While checking chooses the second index (on 'c,b,a') based on
+      the 'limit' specified and the selectivity of
+      'quick_condition_rows' (number of rows present in the range)
+      in 'test_if_skip_sort_order' function. 
+      But, it fails to consider that an order by clause on a
+      different column will result in scanning the entire index and 
+      hence the estimated number of rows calculated above are 
+      wrong (which results in choosing the second index).
+      
+      FIX:
+      Do not enforce the 'limit' clause in the call to
+      'test_if_skip_sort_order' if we are creating a temporary
+      table. Creation of temporary table indicates that there would be
+      more post-processing and hence will need all the rows.
+      
+      This fix is backported from 5.6. This problem is fixed in 5.6 as   
+      part of changes for work log #5558
+------------------------------------------------------------
+revno: 3903
+committer: Nuno Carvalho <nuno.carvalho@oracle.com>
+branch nick: mysql-5.5
+timestamp: Fri 2012-07-13 10:04:59 +0100
+message:
+  BUG#14310067: RPL_CANT_READ_EVENT_INCIDENT AND RPL_BUG41902 FAIL ON 5.5
+  
+  rpl_cant_read_event_incident:
+  Slave applies updates from bug11747416_32228_binlog.000001 file which 
+  contains a CREATE TABLE t statement and an incident, when SQL thread is
+  running slowly IO thread may reach the incident before SQL thread
+  executes the create table statement. 
+  Execute "drop table if exists t" and also perform a RESET MASTER to
+  clean slave binary logs.
+  
+  rpl_bug41902:
+  Error "MYSQL_BIN_LOG::purge_logs was called with file
+  ./master-bin.000001 not listed in the index." suppression is not 
+  considering windows path, there is ".\master-bin.000001".
+  Changed suppression to: "MYSQL_BIN_LOG::purge_logs was called with file
+  ..master-bin.000001 not listed in the index", to match ".\" and "./".
+------------------------------------------------------------
+revno: 3902 [merge]
+committer: Annamalai Gurusami <annamalai.gurusami@oracle.com>
+branch nick: mysql-5.5
+timestamp: Thu 2012-07-12 16:48:21 +0530
+message:
+  Merging from mysql-5.1 to mysql-5.5. 
+    ------------------------------------------------------------
+    revno: 2661.810.46
+    committer: Annamalai Gurusami <annamalai.gurusami@oracle.com>
+    branch nick: mysql-5.1
+    timestamp: Thu 2012-07-12 16:42:07 +0530
+    message:
+      Bug #11765218 58157: INNODB LOCKS AN UNMATCHED ROW EVEN THOUGH USING
+      RBR AND RC
+      
+      Description: When scanning and locking rows with < or <=, InnoDB locks
+      the next row even though row based binary logging and read committed
+      is used.
+      
+      Solution: In the handler, when the row is identified to fall outside
+      of the range (as specified in the query predicates), then request the
+      storage engine to unlock the row (if possible). This is done in
+      handler::read_range_first() and handler::read_range_next().
+------------------------------------------------------------
+revno: 3901
+author: hery.ramilison@oracle.com
+committer: Hery Ramilison <hery.ramilison@oracle.com>
+branch nick: mysql-5.5
+timestamp: Wed 2012-07-11 18:51:07 +0200
+message:
+  Raise version number after cloning 5.5.27
+------------------------------------------------------------
+revno: 3900 [merge]
+tags: mysql-5.5.27, clone-5.5.27-build
+committer: Bjorn Munch <bjorn.munch@oracle.com>
+branch nick: mysql-5.5
+timestamp: Wed 2012-07-11 15:34:38 +0200
+message:
+  Empty version change upmerge
+    ------------------------------------------------------------
+    revno: 2661.810.45
+    author: bjorn.munch@oracle.com
+    committer: Bjorn Munch <bjorn.munch@oracle.com>
+    branch nick: mysql-5.1
+    timestamp: Wed 2012-07-11 15:18:34 +0200
+    message:
+      Raise version number after cloning 5.1.65

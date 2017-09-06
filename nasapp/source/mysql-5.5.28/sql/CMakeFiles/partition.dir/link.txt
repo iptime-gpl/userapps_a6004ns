@@ -1,0 +1,2 @@
+/projects/hnd/tools/linux/hndtools-arm-linux-2.6.36-uclibc-4.5.3/bin/arm-brcm-linux-uclibcgnueabi-ar cr libpartition.a  CMakeFiles/partition.dir/ha_partition.cc.o
+/projects/hnd/tools/linux/hndtools-arm-linux-2.6.36-uclibc-4.5.3/bin/arm-brcm-linux-uclibcgnueabi-ranlib libpartition.a

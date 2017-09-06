@@ -1,0 +1,10 @@
+#!/bin/sh -
+#
+# $Id: s_chk_java_samples,v 1.1.1.1 2012/04/24 01:43:08 thki81 Exp $
+#
+# Check to make sure that the java code samples in the documents build.
+
+
+# There isn't any Java sample code left in the Reference Guide.  This test
+# left as a placeholder so I don't have to renumber all of the other tests.
+exit 0

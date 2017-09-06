@@ -1,0 +1,2 @@
+/projects/hnd/tools/linux/hndtools-arm-linux-2.6.36-uclibc-4.5.3/bin/arm-brcm-linux-uclibcgnueabi-ar cr libvio.a  CMakeFiles/vio.dir/vio.c.o CMakeFiles/vio.dir/viosocket.c.o CMakeFiles/vio.dir/viossl.c.o CMakeFiles/vio.dir/viosslfactories.c.o
+/projects/hnd/tools/linux/hndtools-arm-linux-2.6.36-uclibc-4.5.3/bin/arm-brcm-linux-uclibcgnueabi-ranlib libvio.a

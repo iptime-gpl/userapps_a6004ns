@@ -1,0 +1,58 @@
+#! /bin/sh
+#
+# Created by configure
+
+CC="arm-brcm-linux-uclibcgnueabi-gcc"; export CC
+CPPFLAGS="-I/home/bcmac/userapps/nasapp/source/httpd-2.4.3/include -I/home/bcmac/userapps/nasapp/source/httpd-2.4.3/srclib/apr/include -I/home/bcmac/userapps/nasapp/source/httpd-2.4.3/srclib/apr-util/include -I/projects/hnd/tools/linux/hndtools-arm-linux-2.6.36-uclibc-4.5.3/include -I/home/bcmac/userapps/nasapp/include -D_FILE_OFFSET_BITS=64 -D_LARGEFILE_SOURCE -D_LARGE_FILES"; export CPPFLAGS
+LDFLAGS="-shared -L/home/bcmac/userapps/nasapp/source/httpd-2.4.3/srclib/apr/.libs -L/home/bcmac/userapps/nasapp/source/httpd-2.4.3/srclib/apr-util/.libs -L/projects/hnd/tools/linux/hndtools-arm-linux-2.6.36-uclibc-4.5.3/lib -lpthread -L/home/bcmac/userapps/nasapp/lib"; export LDFLAGS
+LIBS="-ldl"; export LIBS
+"/home/bcmac/userapps/nasapp/source/httpd-2.4.3/srclib/apr-util/configure" \
+"--disable-option-checking" \
+"--host=arm-uclibc-linux" \
+"--target=arm-uclibc-linux" \
+"--build=i686-pc-linux" \
+"CPPFLAGS=-I/home/bcmac/userapps/nasapp/source/httpd-2.4.3/include -I/home/bcmac/userapps/nasapp/source/httpd-2.4.3/srclib/apr/include -I/home/bcmac/userapps/nasapp/source/httpd-2.4.3/srclib/apr-util/include -I/projects/hnd/tools/linux/hndtools-arm-linux-2.6.36-uclibc-4.5.3/include -I/home/bcmac/userapps/nasapp/include -D_FILE_OFFSET_BITS=64 -D_LARGEFILE_SOURCE -D_LARGE_FILES" \
+"LDFLAGS=-shared -L/home/bcmac/userapps/nasapp/source/httpd-2.4.3/srclib/apr/.libs -L/home/bcmac/userapps/nasapp/source/httpd-2.4.3/srclib/apr-util/.libs -L/projects/hnd/tools/linux/hndtools-arm-linux-2.6.36-uclibc-4.5.3/lib -lpthread -L/home/bcmac/userapps/nasapp/lib" \
+"LIBS=-ldl" \
+"--with-included-apr" \
+"--with-pcre=/home/bcmac/userapps/nasapp" \
+"ac_cv_file__dev_zero=yes" \
+"ac_cv_func_setpgrp_void=yes" \
+"apr_cv_process_shared_works=no" \
+"apr_cv_tcp_nodelay_with_cork=no" \
+"ac_cv_sizeof_struct_iovec=8" \
+"apr_cv_mutex_robust_shared=no" \
+"apr_cv_mutex_recursive=yes" \
+"--enable-modules=most" \
+"ac_cv_sizeof_ssize_t=4" \
+"ac_cv_sizeof_size_t=8" \
+"ac_cv_sizeof_pid_t=4" \
+"ac_cv_sizeof_ino_t=8" \
+"with_crypto=no" \
+"with_openssl=yes" \
+"apu_have_openssl=0" \
+"--disable-ssl" \
+"--enable-session" \
+"--enable-session-cookie" \
+"--enable-log-debug" \
+"--with-mpm=prefork" \
+"--enable-mpms-shared=all" \
+"--enable-unixd" \
+"--enable-so" \
+"--enable-auth-form" \
+"--enable-auth-digest" \
+"--enable-rewrite" \
+"--with-libxml2=/home/bcmac/userapps/nasapp" \
+"build_alias=i686-pc-linux" \
+"host_alias=arm-uclibc-linux" \
+"target_alias=arm-uclibc-linux" \
+"CC=arm-brcm-linux-uclibcgnueabi-gcc" \
+"--cache-file=/dev/null" \
+"--srcdir=/home/bcmac/userapps/nasapp/source/httpd-2.4.3/srclib/apr-util" \
+"--with-apr=../apr" \
+"--prefix=/usr/local/apache2" \
+"--exec-prefix=/usr/local/apache2" \
+"--libdir=/usr/local/apache2/lib" \
+"--includedir=/usr/local/apache2/include" \
+"--bindir=/usr/local/apache2/bin" \
+"$@"

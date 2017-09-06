@@ -1,0 +1,7 @@
+1. run make
+
+2. after first error, cp comp_err.
+cp ./binary/gen_test_char ./server
+make
+
+5. Done.

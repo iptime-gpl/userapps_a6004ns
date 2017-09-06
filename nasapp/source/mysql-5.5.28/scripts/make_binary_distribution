@@ -1,0 +1,1 @@
+cd /home/bcmac/userapps/nasapp/source/mysql-5.5.28 && '/usr/bin/cpack' -G TGZ --config CPackConfig.cmake

@@ -1,0 +1,7 @@
+#!/bin/sh -
+#	$Id: s_csharp,v 1.1.1.1 2012/04/24 01:43:07 thki81 Exp $
+#
+# Build the Java files.
+
+sh s_csharp_swig		# Create core Java API with SWIG
+sh s_csharp_const		# Create Java constants

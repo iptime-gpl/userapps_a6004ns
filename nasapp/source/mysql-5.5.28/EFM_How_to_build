@@ -1,0 +1,15 @@
+1. run make
+
+2. after first error, cp comp_err.
+cp ./binary/comp_err ./extra
+make
+
+3. after second error, cp comp_sql
+cp -af ${TOP_SRC}/mysql-5.5.28/binary/comp_sql ${TOP_SRC}/mysql-5.5.28/script
+make
+
+4. after third error, cp gen_lex_hash
+cp -af ${TOP_SRC}/mysql-5.5.28/binary/gen_lex_hash ${TOP_SRC}/mysql-5.5.28/sql
+make
+
+5. Done.
