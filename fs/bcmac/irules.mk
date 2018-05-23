@@ -77,8 +77,8 @@ BOOT_BIN_PATH:=./prebuilt/boot/$(BOOT_FILE)
 NVRAM_FILE:=./clones/$(TARGET)/$(NVRAM_FILENAME)
 CFE_NV_IMG:=./clones/$(TARGET)/$(TARGET)_xboot.bin
 TRX_NAME:=linux.trx
-FIRMWARE_NAME:=a6004ns_kr_10_006.bin
-FINAL_FIRMWARE_NAME:=a6004ns_ml_10_006.bin
+FIRMWARE_NAME:=a6004ns_kr_10_023.bin
+FINAL_FIRMWARE_NAME:=a6004ns_ml_10_023.bin
 image:
 	@echo "--->Making firmware..."
 	@./tools/trx -o $(TRX_NAME) prebuilt/kernel/$(KERNEL_FILENAME) $(ROOTFS_IMG);
